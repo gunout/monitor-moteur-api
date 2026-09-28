@@ -805,6 +805,7 @@ function updateMinisterePanel(){
   document.getElementById('ivMinistereStatus').className = 'v ' + (m ? 'green' : '');
 }
 
+// ⭐ VERSION PATCHÉE : agrégation multi-pages
 async function runSearch(){
   const q = document.getElementById('queryInput').value.trim();
   const type = document.getElementById('typeSelect').value;
@@ -825,36 +826,60 @@ async function runSearch(){
   showResults(`
     <div class="loading">
       <div class="spin"></div>
-      Recherche « ${escapeHtml(label)} » en cours...
+      Recherche « ${escapeHtml(label)} » — agrégation multi-pages...
+      <div id="progressText" style="margin-top:8px;font-size:11px;color:var(--grey-500)"></div>
     </div>
   `);
 
   const start = performance.now();
+  const PAGE_SIZE = 50;
+  const MAX_PAGES = 10;
+  const allResults = [];
+  const seenIds = new Set();
+
   try {
-    const url = new URL(`${state.apiBase}/search`);
-    url.searchParams.set('q', q);
-    url.searchParams.set('type', type);
-    url.searchParams.set('sort', sort);
-    url.searchParams.set('page_size', 50);
-    if (state.activeMinistere){
-      url.searchParams.set('organization', state.activeMinistere);
+    for (let page = 1; page <= MAX_PAGES; page++){
+      const progress = document.getElementById('progressText');
+      if (progress) progress.textContent = `Page ${page} / ${MAX_PAGES}... (${allResults.length} résultats agrégés)`;
+
+      const url = new URL(`${state.apiBase}/search`);
+      url.searchParams.set('q', q);
+      url.searchParams.set('type', type);
+      url.searchParams.set('sort', sort);
+      url.searchParams.set('page', page);
+      url.searchParams.set('page_size', PAGE_SIZE);
+      if (state.activeMinistere){
+        url.searchParams.set('organization', state.activeMinistere);
+      }
+
+      const r = await fetch(url.toString());
+      if (!r.ok) throw new Error(`HTTP ${r.status} (page ${page})`);
+      const data = await r.json();
+
+      const pageResults = data.results || [];
+
+      for (const item of pageResults){
+        if (item.id && !seenIds.has(item.id)){
+          seenIds.add(item.id);
+          allResults.push(item);
+        }
+      }
+
+      if (pageResults.length < PAGE_SIZE) break;
     }
 
-    const r = await fetch(url.toString());
     const elapsed = Math.round(performance.now() - start);
 
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const data = await r.json();
-
     state.lastQuery = q;
-    state.lastResults = data.results || [];
+    state.lastResults = allResults;
     state.lastResponseTime = elapsed;
 
-    const datasets = state.lastResults.filter(x => x.type === 'dataset').length;
-    const apis = state.lastResults.filter(x => x.type === 'dataservice').length;
-    document.getElementById('tbCount').textContent = data.count || 0;
+    const datasets = allResults.filter(x => x.type === 'dataset').length;
+    const apis = allResults.filter(x => x.type === 'dataservice').length;
+
+    document.getElementById('tbCount').textContent = allResults.length;
     document.getElementById('ivQuery').textContent = q || (m ? m.nom : '(vide)');
-    document.getElementById('ivCount').textContent = data.count || 0;
+    document.getElementById('ivCount').textContent = allResults.length;
     document.getElementById('ivTime').textContent = elapsed + ' ms';
     document.getElementById('ivDatasets').textContent = datasets;
     document.getElementById('ivApis').textContent = apis;
@@ -864,13 +889,24 @@ async function runSearch(){
 
     state.activities.unshift({
       q: q || (m ? m.nom : '(vide)'),
-      count: data.count || 0,
+      count: allResults.length,
       time: new Date()
     });
     state.activities = state.activities.slice(0, 10);
     renderActivities();
 
-    renderResults(data);
+    const VISIBLE_LIMIT = 100;
+    const visible = allResults.slice(0, VISIBLE_LIMIT);
+    const truncated = allResults.length > VISIBLE_LIMIT;
+
+    renderResults({
+      results: visible,
+      query: q || (m ? m.nom : '(vide)'),
+      count: allResults.length,
+      sort: sort,
+      truncated: truncated,
+      shown: visible.length
+    });
 
   } catch(err){
     showResults(`
@@ -889,6 +925,7 @@ function showResults(html){
   document.getElementById('resultsArea').innerHTML = html;
 }
 
+// ⭐ VERSION PATCHÉE : affiche le compteur de troncature
 function renderResults(data){
   const results = data.results || [];
   if (!results.length){
@@ -926,14 +963,17 @@ function renderResults(data){
 
   const m = state.ministeres.find(x => x.slug === state.activeMinistere);
   const filtre = m ? ` · 🏛️ ${escapeHtml(m.nom)}` : '';
+  const truncMsg = data.truncated
+    ? ` · <span style="color:#8a5e00;font-weight:700">${data.shown} affichés sur ${data.count.toLocaleString('fr-FR')}</span>`
+    : '';
 
   const header = `
     <div style="font-size:12px;color:var(--grey-700);
                 margin-bottom:12px;padding:10px 14px;background:var(--white);
                 border-radius:4px;border-left:4px solid var(--blue-france);
                 box-shadow:0 1px 3px rgba(0,0,0,0.04)">
-      <strong style="color:var(--blue-france)">${data.count} résultat(s)</strong>
-      pour « ${escapeHtml(data.query || '(vide)')} »${filtre}
+      <strong style="color:var(--blue-france)">${data.count.toLocaleString('fr-FR')} résultat(s)</strong>
+      pour « ${escapeHtml(data.query || '(vide)')} »${filtre}${truncMsg}
       · tri : ${escapeHtml(data.sort)}
     </div>
   `;
@@ -1028,7 +1068,7 @@ document.getElementById('exportCsv').addEventListener('click', () => {
   const params = new URLSearchParams({
     q: state.lastQuery || '',
     format: 'csv',
-    max_pages: 3
+    max_pages: 10
   });
   if (state.activeMinistere) params.set('organization', state.activeMinistere);
   window.location.href = `${state.apiBase}/export?${params.toString()}`;
@@ -1039,7 +1079,7 @@ document.getElementById('exportJson').addEventListener('click', () => {
   const params = new URLSearchParams({
     q: state.lastQuery || '',
     format: 'json',
-    max_pages: 3
+    max_pages: 10
   });
   if (state.activeMinistere) params.set('organization', state.activeMinistere);
   window.open(`${state.apiBase}/export?${params.toString()}`, '_blank');
