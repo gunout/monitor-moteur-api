@@ -25,26 +25,16 @@ DATAGOUV_WEB = "https://www.data.gouv.fr"
 
 
 # ---------------------------------------------------------------------------
-# Cache en mémoire : slug d'organisation → ID technique
+# Cache : slug d'organisation → ID technique
 # ---------------------------------------------------------------------------
 _ORG_ID_CACHE: dict[str, str] = {}
 
 
 async def resolve_org_id(client: httpx.AsyncClient, slug_or_id: str) -> Optional[str]:
-    """
-    Convertit un slug d'organisation en ID technique (24 chars hex).
-    Si la valeur est déjà un ID, la renvoie telle quelle.
-    Résultat mis en cache pour éviter de refaire l'appel.
-    """
-    # Déjà un ID ?
     if len(slug_or_id) == 24 and all(c in "0123456789abcdef" for c in slug_or_id.lower()):
         return slug_or_id
-
-    # Cache ?
     if slug_or_id in _ORG_ID_CACHE:
         return _ORG_ID_CACHE[slug_or_id]
-
-    # Appel API v1 pour récupérer l'organisation par son slug
     try:
         r = await client.get(f"{BASE_V1}/organizations/{slug_or_id}/")
         if r.status_code == 200:
@@ -55,7 +45,6 @@ async def resolve_org_id(client: httpx.AsyncClient, slug_or_id: str) -> Optional
                 return org_id
     except Exception as e:
         print(f"[resolve_org_id] erreur sur {slug_or_id}: {e}")
-
     return None
 
 
@@ -115,7 +104,7 @@ def clean_item(item: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Connecteurs API data.gouv.fr
+# Connecteurs API
 # ---------------------------------------------------------------------------
 
 async def search_datasets_v1(client, q, page, page_size, organization=None):
@@ -154,7 +143,6 @@ async def search_datasets_v2(client, q, page, page_size, organization, access_ty
     params = {"page": page, "page_size": page_size}
     if q:
         params["q"] = q
-    # ⭐ CORRECTIF CLÉ : convertir le slug en ID
     if organization:
         org_id = await resolve_org_id(client, organization)
         if org_id:
@@ -235,7 +223,6 @@ async def run_search(
     async with httpx.AsyncClient(timeout=TIMEOUT) as client:
         tasks, labels = [], []
 
-        # Si un filtre organization est fourni, seule la v2 le gère correctement.
         if organization:
             tasks.append(search_datasets_v2(
                 client, q, page, page_size, organization, access_type, last_update
@@ -243,8 +230,11 @@ async def run_search(
             labels.append("v2")
         else:
             if type_ in ("dataset", "all"):
-                tasks.append(search_datasets_v1(client, q, page, page_size))
-                labels.append("v1")
+                # ⭐ CORRECTIF SOLUTION 2 : v1 ne supporte pas la pagination avec q
+                # On ne l'appelle que sur la page 1 pour éviter les 404
+                if page == 1:
+                    tasks.append(search_datasets_v1(client, q, page, page_size))
+                    labels.append("v1")
                 tasks.append(search_datasets_v2(
                     client, q, page, page_size, organization, access_type, last_update
                 ))
@@ -404,7 +394,6 @@ async def tabular_profile(dataset_id: str):
 
 @app.get("/resolve-org/{slug}")
 async def resolve_org(slug: str):
-    """Endpoint utilitaire pour tester la résolution slug → ID."""
     async with httpx.AsyncClient(timeout=TIMEOUT) as client:
         org_id = await resolve_org_id(client, slug)
     return {"slug": slug, "id": org_id, "cached": slug in _ORG_ID_CACHE}
