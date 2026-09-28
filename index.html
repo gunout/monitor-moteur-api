@@ -562,7 +562,7 @@ body{
   <aside class="sidebar">
     <div class="sb-head">
       <div class="sb-title">🏛️ Ministères</div>
-      <div class="sb-count" id="sbCount">14 ministères</div>
+      <div class="sb-count" id="sbCount">15 ministères</div>
     </div>
     <div class="sb-search">
       <input type="text" id="sourceSearch" placeholder="🔍 Filtrer...">
@@ -685,20 +685,21 @@ const state = {
   activities: [],
   activeMinistere: null,
   ministeres: [
-    { nom: "Intérieur",                slug: "ministere-de-linterieur", icon: "🏛️", color: "#000091" },
-    { nom: "Transition écologique",    slug: "ministere-de-la-transition-ecologique", icon: "🌿", color: "#18753c" },
-    { nom: "Armées",                   slug: "ministere-des-armees", icon: "⚔️", color: "#3a3a3a" },
-    { nom: "Culture",                  slug: "ministere-de-la-culture-et-de-la-communication", icon: "🎭", color: "#a855f7" },
-    { nom: "Justice",                  slug: "ministere-de-la-justice", icon: "⚖️", color: "#8ba3c7" },
-    { nom: "Économie & Finances",      slug: "ministeres-economiques-et-financiers", icon: "💰", color: "#ffb800" },
-    { nom: "Industrie & Numérique",    slug: "ministere-de-l-economie-de-l-industrie-et-du-numerique", icon: "🏭", color: "#ff6b00" },
-    { nom: "Agriculture",              slug: "ministere-de-lagriculture-de-lagro-alimentaire-et-de-la-souverainete-alimentaire", icon: "🌾", color: "#00a95f" },
-    { nom: "Solidarités & Santé",      slug: "ministere-des-solidarites-et-de-la-sante", icon: "💊", color: "#00e5ff" },
-    { nom: "Éducation nationale",      slug: "ministeres-de-leducation-nationale", icon: "🎓", color: "#a855f7" },
-    { nom: "Enseignement supérieur",   slug: "ministere-de-lenseignement-superieur-de-la-recherche-et-de-lespace", icon: "🔬", color: "#3b82f6" },
-    { nom: "Sports",                   slug: "ministere-charge-des-sports", icon: "⚽", color: "#E1000F" },
-    { nom: "Travail",                  slug: "ministere-du-travail-du-plein-emploi-et-de-linsertion", icon: "💼", color: "#ff6b00" },
-    { nom: "Logement",                 slug: "ministere-de-l-egalite-des-territoires-et-du-logement", icon: "🏘️", color: "#ffb800" },
+    { nom: "Intérieur",                    slug: "ministere-de-linterieur", icon: "🏛️", color: "#000091" },
+    { nom: "Transition écologique",        slug: "ministere-de-la-transition-ecologique", icon: "🌿", color: "#18753c" },
+    { nom: "Armées",                       slug: "ministere-des-armees", icon: "⚔️", color: "#3a3a3a" },
+    { nom: "Culture",                      slug: "ministere-de-la-culture-et-de-la-communication", icon: "🎭", color: "#a855f7" },
+    { nom: "Justice",                      slug: "ministere-de-la-justice", icon: "⚖️", color: "#8ba3c7" },
+    { nom: "Économie & Finances",          slug: "ministeres-economiques-et-financiers", icon: "💰", color: "#ffb800" },
+    { nom: "Industrie & Numérique",        slug: "ministere-de-l-economie-de-l-industrie-et-du-numerique", icon: "🏭", color: "#ff6b00" },
+    { nom: "Agriculture",                  slug: "ministere-de-lagriculture-de-lagro-alimentaire-et-de-la-souverainete-alimentaire", icon: "🌾", color: "#00a95f" },
+    { nom: "Solidarités & Santé",          slug: "ministere-des-solidarites-et-de-la-sante", icon: "💊", color: "#00e5ff" },
+    { nom: "Éducation nationale",          slug: "ministeres-de-leducation-nationale", icon: "🎓", color: "#a855f7" },
+    { nom: "Enseignement supérieur",       slug: "ministere-de-lenseignement-superieur-de-la-recherche-et-de-lespace", icon: "🔬", color: "#3b82f6" },
+    { nom: "Sports",                       slug: "ministere-charge-des-sports", icon: "⚽", color: "#E1000F" },
+    { nom: "Travail",                      slug: "ministere-du-travail-du-plein-emploi-et-de-linsertion", icon: "💼", color: "#ff6b00" },
+    { nom: "Logement / Cohésion",          slug: "ministere-de-l-egalite-des-territoires-et-du-logement", icon: "🏘️", color: "#ffb800" },
+    { nom: "Europe & Affaires étrangères", slug: "ministere-des-affaires-etrangeres-et-du-developpement-international", icon: "🌍", color: "#3b82f6" },
   ]
 };
 
@@ -966,16 +967,17 @@ document.querySelectorAll('.tab').forEach(t => {
         <div class="empty">
           <div style="font-size:48px;margin-bottom:14px">🏛️</div>
           <div style="font-weight:700;color:var(--grey-900);margin-bottom:10px;font-size:16px">
-            14 ministères intégrés
+            15 ministères intégrés
           </div>
           <div style="font-size:13px;line-height:2;margin-top:16px;text-align:left;
-                      max-width:520px;margin-left:auto;margin-right:auto">
+                      max-width:560px;margin-left:auto;margin-right:auto">
             ${state.ministeres.map(m => `
               <div style="padding:6px 0;border-bottom:1px solid var(--grey-100)">
                 <span style="font-size:18px">${m.icon}</span>
                 <strong style="color:var(--grey-900);margin-left:6px">${m.nom}</strong>
                 <div style="font-family:var(--font-mono);font-size:10px;
-                            color:var(--blue-france);margin-left:28px;margin-top:2px">
+                            color:var(--blue-france);margin-left:28px;margin-top:2px;
+                            word-break:break-all">
                   ${m.slug}
                 </div>
               </div>
