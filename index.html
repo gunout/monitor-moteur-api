@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>🇫🇷 Meta Monitor — Méta-moteur data.gouv.fr</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.11.2/dist/dsfr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.11.2/dist/utility/utility.min.css">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+/* ============================================================
+   PALETTE MARIANNE
+   ============================================================ */
+:root{
+  /* Bleu France */
+  --blue-france:#000091;
+  --blue-france-hi:#1212ff;
+  --blue-france-soft:#e3e3fd;
+  /* Rouge Marianne */
+  --red-marianne:#E1000F;
+  --red-marianne-soft:#ffe9e9;
+  /* Neutres */
+  --white:#ffffff;
+  --grey-50:#f6f6f6;
+  --grey-100:#eeeeee;
+  --grey-200:#e5e5e5;
+  --grey-500:#929292;
+  --grey-700:#3a3a3a;
+  --grey-900:#1e1e1e;
+  --grey-1000:#161616;
+  /* Accents */
+  --green-bourgeon:#18753c;
+  --green-emeraude:#00a95f;
+  --yellow-tournesol:#ffb800;
+  /* Fonts DSFR */
+  --font-mono:'SF Mono',Menlo,Consolas,'Courier New',monospace;
+  --font-sans:'Marianne','system-ui',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+
+html{height:100%}
+body{
+  font-family:var(--font-sans);
+  background:var(--grey-50);
+  color:var(--grey-900);
+  font-size:13px;
+  line-height:1.5;
+  min-height:100%;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:var(--grey-100)}
+::-webkit-scrollbar-thumb{background:var(--grey-500);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--blue-france)}
+
+/* ============================================================
+   BANDEAU TRICOLORE
+   ============================================================ */
+.marianne-band{
+  height:6px;
+  background:linear-gradient(to right,
+    var(--blue-france) 0%, var(--blue-france) 33.33%,
+    var(--white) 33.33%, var(--white) 66.66%,
+    var(--red-marianne) 66.66%, var(--red-marianne) 100%);
+}
+
+/* ============================================================
+   BLOC-MARQUE RÉPUBLIQUE FRANÇAISE
+   ============================================================ */
+.bloc-marque{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 16px;
+  background:var(--white);
+  border-bottom:1px solid var(--grey-200);
+}
+.bloc-marque-logo{
+  font-family:var(--font-sans);
+  font-weight:700;
+  font-size:13px;
+  line-height:1.15;
+  color:var(--grey-900);
+  letter-spacing:0.3px;
+  text-transform:uppercase;
+  border-right:1px solid var(--grey-200);
+  padding-right:12px;
+}
+.bloc-marque-devise{
+  font-family:var(--font-sans);
+  font-size:10px;
+  font-weight:400;
+  color:var(--grey-700);
+  line-height:1.3;
+  letter-spacing:0.5px;
+}
+.bloc-marque-devise em{
+  display:block;
+  font-style:normal;
+  text-transform:uppercase;
+  letter-spacing:1.2px;
+  font-size:9px;
+  color:var(--grey-500);
+}
+
+/* ============================================================
+   TOPBAR
+   ============================================================ */
+.topbar{
+  background:var(--white);
+  border-bottom:1px solid var(--grey-200);
+  display:flex;
+  align-items:center;
+  padding:10px 16px;
+  gap:12px;
+  position:sticky;
+  top:6px;
+  z-index:100;
+  flex-wrap:wrap;
+  box-shadow:0 2px 6px rgba(0,0,0,0.04);
+}
+.brand{
+  font-family:var(--font-sans);
+  font-size:14px;
+  font-weight:700;
+  color:var(--blue-france);
+  letter-spacing:0.3px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  white-space:nowrap;
+}
+.brand .dot{
+  width:10px;height:10px;border-radius:50%;
+  background:var(--green-emeraude);
+  box-shadow:0 0 0 3px rgba(0,169,95,0.2);
+  animation:pulse 1.8s infinite;
+  flex-shrink:0;
+}
+.brand .dot.offline{
+  background:var(--red-marianne);
+  box-shadow:0 0 0 3px rgba(225,0,15,0.2);
+  animation:none;
+}
+@keyframes pulse{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:0.5;transform:scale(0.85)}
+}
+.brand .sub{
+  color:var(--grey-500);
+  font-weight:400;
+  font-size:12px;
+  font-family:var(--font-mono);
+}
+
+.tabs{
+  display:flex;gap:4px;order:3;width:100%;overflow-x:auto;
+  padding-bottom:2px;scrollbar-width:none;
+}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  background:transparent;
+  border:none;
+  color:var(--grey-700);
+  font-family:var(--font-sans);
+  font-size:12px;
+  font-weight:500;
+  padding:8px 14px;
+  border-radius:4px;
+  cursor:pointer;
+  transition:all 0.15s;
+  display:flex;align-items:center;gap:6px;
+  white-space:nowrap;flex-shrink:0;
+  border-bottom:2px solid transparent;
+}
+.tab:hover{background:var(--blue-france-soft);color:var(--blue-france)}
+.tab.active{
+  background:var(--blue-france-soft);
+  color:var(--blue-france);
+  border-bottom-color:var(--blue-france);
+  font-weight:700;
+}
+
+.topbar-right{
+  margin-left:auto;display:flex;gap:14px;
+  font-family:var(--font-mono);font-size:11px;
+  align-items:center;flex-wrap:wrap;order:2;
+}
+.topbar-stat{
+  display:flex;gap:5px;color:var(--grey-700);
+  align-items:center;white-space:nowrap;
+}
+.topbar-stat .val{
+  color:var(--blue-france);font-weight:700;
+  padding:2px 6px;border-radius:3px;background:var(--blue-france-soft);
+}
+.topbar-stat .val.green{color:var(--green-bourgeon);background:#b8fec9}
+.topbar-stat .val.amber{color:#8a5e00;background:#ffe9b8}
+.topbar-stat .val.red{color:var(--red-marianne);background:var(--red-marianne-soft)}
+
+/* ============================================================
+   APP
+   ============================================================ */
+.app{
+  display:grid;
+  grid-template-columns:280px 1fr 320px;
+  height:calc(100vh - 130px);
+  overflow:hidden;
+  gap:0;
+}
+@media(max-width:1200px){.app{grid-template-columns:240px 1fr 280px}}
+
+/* ============================================================
+   SIDEBAR GAUCHE
+   ============================================================ */
+.sidebar{
+  background:var(--white);
+  border-right:1px solid var(--grey-200);
+  display:flex;flex-direction:column;overflow:hidden;min-height:0;
+}
+.sb-head{
+  padding:14px 16px;
+  border-bottom:1px solid var(--grey-200);
+  background:var(--grey-50);
+  flex-shrink:0;
+}
+.sb-title{
+  font-family:var(--font-sans);
+  font-size:12px;font-weight:700;
+  color:var(--blue-france);
+  letter-spacing:0.5px;
+  text-transform:uppercase;
+  display:flex;align-items:center;gap:8px;
+}
+.sb-title::before{
+  content:'';width:4px;height:14px;
+  background:var(--red-marianne);
+}
+.sb-count{
+  font-family:var(--font-mono);font-size:11px;
+  color:var(--grey-500);margin-top:6px;
+}
+
+.sb-search{
+  padding:10px 14px;
+  border-bottom:1px solid var(--grey-200);
+  flex-shrink:0;
+}
+.sb-search input{
+  width:100%;
+  background:var(--white);
+  border:1px solid var(--grey-200);
+  border-radius:4px;
+  color:var(--grey-900);
+  padding:9px 12px;
+  font-size:13px;
+  font-family:var(--font-sans);
+}
+.sb-search input:focus{
+  outline:none;
+  border-color:var(--blue-france);
+  box-shadow:0 0 0 2px var(--blue-france-soft);
+}
+
+.sb-list{
+  flex:1;overflow-y:auto;padding:8px;
+  min-height:0;
+}
+
+.source-item{
+  background:var(--white);
+  border:1px solid var(--grey-200);
+  border-left:4px solid var(--blue-france);
+  border-radius:4px;
+  padding:10px 12px;
+  margin-bottom:6px;
+  cursor:pointer;
+  transition:all 0.15s;
+}
+.source-item:hover{
+  border-color:var(--blue-france);
+  background:var(--blue-france-soft);
+  transform:translateX(2px);
+}
+.source-item.active{
+  border-color:var(--blue-france);
+  background:var(--blue-france-soft);
+}
+.source-item.err{border-left-color:var(--red-marianne)}
+.source-item-h{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:4px;
+}
+.source-item-icon{font-size:16px;flex-shrink:0}
+.source-item-name{
+  font-family:var(--font-sans);font-size:12px;font-weight:700;
+  color:var(--grey-900);flex:1;line-height:1.3;
+}
+.source-item-meta{
+  display:flex;gap:8px;
+  font-family:var(--font-mono);font-size:10px;
+  color:var(--grey-500);margin-top:4px;flex-wrap:wrap;
+}
+.status-dot{
+  display:inline-block;width:8px;height:8px;border-radius:50%;
+  background:var(--green-emeraude);margin-right:4px;
+  vertical-align:middle;
+}
+.status-dot.err{background:var(--red-marianne)}
+.status-dot.warn{background:var(--yellow-tournesol)}
+
+/* ============================================================
+   CENTRE
+   ============================================================ */
+.center{
+  background:var(--grey-50);
+  display:flex;flex-direction:column;
+  overflow:hidden;min-height:0;
+}
+
+.search-bar{
+  padding:14px 16px;
+  background:var(--white);
+  border-bottom:1px solid var(--grey-200);
+  display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+}
+.search-bar input[type=text]{
+  flex:1;min-width:200px;
+  background:var(--white);
+  border:1px solid var(--grey-200);
+  border-radius:4px;
+  color:var(--grey-900);
+  padding:11px 14px;
+  font-size:14px;
+  font-family:var(--font-sans);
+}
+.search-bar input[type=text]:focus{
+  outline:none;
+  border-color:var(--blue-france);
+  box-shadow:0 0 0 2px var(--blue-france-soft);
+}
+.search-bar select{
+  background:var(--white);
+  border:1px solid var(--grey-200);
+  border-radius:4px;
+  color:var(--grey-900);
+  padding:11px 12px;
+  font-size:13px;
+  font-family:var(--font-sans);
+}
+.search-bar select:focus{
+  outline:none;
+  border-color:var(--blue-france);
+  box-shadow:0 0 0 2px var(--blue-france-soft);
+}
+.search-btn{
+  background:var(--blue-france);
+  color:var(--white);
+  border:1px solid var(--blue-france);
+  font-family:var(--font-sans);
+  font-size:13px;font-weight:700;
+  padding:11px 20px;
+  border-radius:4px;
+  cursor:pointer;
+  letter-spacing:0.3px;
+  transition:all 0.15s;
+  white-space:nowrap;
+}
+.search-btn:hover{
+  background:var(--blue-france-hi);
+  border-color:var(--blue-france-hi);
+}
+.search-btn:disabled{opacity:0.5;cursor:not-allowed}
+
+/* Onglets de vue */
+.mode-tabs{
+  display:flex;gap:0;
+  padding:0 10px;
+  border-bottom:1px solid var(--grey-200);
+  background:var(--white);
+  flex-shrink:0;
+  overflow-x:auto;scrollbar-width:none;
+}
+.mode-tabs::-webkit-scrollbar{display:none}
+.mode-tab{
+  background:transparent;border:none;
+  color:var(--grey-700);
+  font-family:var(--font-sans);
+  font-size:12px;font-weight:500;
+  padding:10px 14px;
+  cursor:pointer;
+  letter-spacing:0.2px;
+  transition:all 0.15s;
+  white-space:nowrap;
+  border-bottom:3px solid transparent;
+}
+.mode-tab:hover{background:var(--grey-50);color:var(--blue-france)}
+.mode-tab.active{
+  color:var(--blue-france);
+  border-bottom-color:var(--blue-france);
+  font-weight:700;
+}
+
+/* Zone résultats */
+.results{
+  flex:1;overflow-y:auto;padding:14px;
+  min-height:0;
+}
+.result-card{
+  background:var(--white);
+  border:1px solid var(--grey-200);
+  border-left:4px solid var(--blue-france);
+  border-radius:4px;
+  padding:14px 16px;
+  margin-bottom:10px;
+  transition:all 0.15s;
+}
+.result-card:hover{
+  border-color:var(--blue-france);
+  box-shadow:0 4px 12px rgba(0,0,145,0.08);
+  transform:translateX(2px);
+}
+.result-card.api{border-left-color:var(--green-emeraude)}
+.rc-head{
+  display:flex;align-items:flex-start;gap:10px;
+  margin-bottom:6px;
+}
+.rc-title{
+  font-family:var(--font-sans);font-size:14px;font-weight:700;
+  color:var(--grey-900);flex:1;line-height:1.35;
+}
+.rc-title a{
+  color:var(--grey-900);text-decoration:none;
+}
+.rc-title a:hover{
+  color:var(--blue-france);
+  text-decoration:underline;
+}
+.rc-badges{
+  display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;
+  flex-shrink:0;
+}
+.rc-badge{
+  font-family:var(--font-mono);font-size:9px;font-weight:700;
+  padding:3px 7px;border-radius:3px;
+  text-transform:uppercase;white-space:nowrap;
+  letter-spacing:0.5px;
+}
+.rc-badge.api{background:var(--green-emeraude);color:var(--white)}
+.rc-badge.dataset{background:var(--blue-france);color:var(--white)}
+.rc-badge.src{background:var(--grey-100);color:var(--grey-700);border:1px solid var(--grey-200)}
+.rc-badge.pop{background:var(--yellow-tournesol);color:var(--grey-900)}
+.rc-desc{
+  font-size:12px;color:var(--grey-700);
+  line-height:1.55;margin-bottom:8px;
+}
+.rc-meta{
+  display:flex;gap:6px;
+  font-family:var(--font-mono);font-size:10px;
+  color:var(--grey-500);flex-wrap:wrap;margin-top:8px;
+}
+.rc-meta .tag{
+  background:var(--grey-50);
+  padding:3px 8px;border-radius:3px;
+  border:1px solid var(--grey-200);
+  color:var(--grey-700);
+}
+.rc-org{
+  color:var(--grey-700);font-weight:600;
+  font-size:12px;margin-bottom:6px;
+  display:flex;align-items:center;gap:6px;
+}
+
+/* États */
+.empty,.loading{
+  text-align:center;padding:60px 20px;
+  color:var(--grey-500);font-size:14px;
+}
+.spin{
+  width:40px;height:40px;
+  border:3px solid var(--grey-200);
+  border-top-color:var(--blue-france);
+  border-radius:50%;
+  animation:sp 0.8s linear infinite;
+  margin:0 auto 14px;
+}
+@keyframes sp{to{transform:rotate(360deg)}}
+.error-box{
+  background:var(--red-marianne-soft);
+  border:1px solid var(--red-marianne);
+  border-left-width:4px;
+  color:var(--red-marianne);
+  padding:16px;border-radius:4px;
+  font-size:13px;margin:12px;
+}
+.error-box strong{color:var(--red-marianne)}
+
+/* Boutons d'export */
+.export-group{
+  display:flex;gap:8px;
+  padding:12px 14px;
+  border-top:1px solid var(--grey-200);
+  background:var(--white);
+  flex-shrink:0;
+}
+.export-btn{
+  flex:1;
+  background:var(--white);
+  color:var(--grey-900);
+  border:1px solid var(--grey-200);
+  font-family:var(--font-sans);
+  font-size:12px;font-weight:600;
+  padding:10px 14px;
+  border-radius:4px;
+  cursor:pointer;
+  transition:all 0.15s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.export-btn:hover{
+  border-color:var(--blue-france);
+  color:var(--blue-france);
+  background:var(--blue-france-soft);
+}
+.export-btn:disabled{opacity:0.4;cursor:not-allowed}
+.export-btn:disabled:hover{
+  border-color:var(--grey-200);
+  color:var(--grey-900);
+  background:var(--white);
+}
+
+/* ============================================================
+   RIGHT SIDEBAR
+   ============================================================ */
+.right{
+  background:var(--white);
+  border-left:1px solid var(--grey-200);
+  display:flex;flex-direction:column;
+  overflow:hidden;min-height:0;
+}
+.rs-head{
+  padding:14px 16px;
+  border-bottom:1px solid var(--grey-200);
+  background:var(--grey-50);
+  font-family:var(--font-sans);
+  font-size:12px;font-weight:700;
+  color:var(--blue-france);
+  letter-spacing:0.5px;
+  text-transform:uppercase;
+  display:flex;align-items:center;gap:8px;
+  flex-shrink:0;
+}
+.rs-head::before{
+  content:'';width:4px;height:14px;
+  background:var(--red-marianne);
+}
+.rs-body{
+  flex:1;overflow-y:auto;padding:12px;
+  min-height:0;
+}
+
+.intel-panel{
+  background:var(--white);
+  border:1px solid var(--grey-200);
+  border-radius:4px;
+  margin-bottom:10px;
+  overflow:hidden;
+}
+.intel-head{
+  padding:9px 12px;
+  background:var(--grey-50);
+  border-bottom:1px solid var(--grey-200);
+  font-family:var(--font-sans);
+  font-size:11px;font-weight:700;
+  color:var(--blue-france);
+  letter-spacing:0.5px;
+  text-transform:uppercase;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.intel-body{padding:10px}
+.intel-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:7px 0;
+  border-bottom:1px solid var(--grey-100);
+  font-family:var(--font-sans);font-size:12px;
+}
+.intel-row:last-child{border-bottom:none}
+.intel-row .k{color:var(--grey-700)}
+.intel-row .v{
+  color:var(--grey-900);font-weight:700;text-align:right;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  max-width:170px;font-family:var(--font-mono);font-size:11px;
+}
+.intel-row .v.cyan{color:var(--blue-france)}
+.intel-row .v.green{color:var(--green-bourgeon)}
+.intel-row .v.amber{color:#8a5e00}
+.intel-row .v.red{color:var(--red-marianne)}
+
+.progress{
+  height:5px;background:var(--grey-100);
+  border-radius:3px;overflow:hidden;margin-top:5px;
+}
+.progress-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--blue-france),var(--blue-france-hi));
+  border-radius:3px;transition:width 0.4s;
+}
+.progress-fill.green{background:linear-gradient(90deg,var(--green-bourgeon),var(--green-emeraude))}
+.progress-fill.red{background:linear-gradient(90deg,#8b1a1a,var(--red-marianne))}
+
+.activity-item{
+  display:flex;justify-content:space-between;
+  padding:6px 0;
+  border-bottom:1px solid var(--grey-100);
+  font-family:var(--font-mono);font-size:11px;
+}
+.activity-item:last-child{border-bottom:none}
+.activity-item .q{
+  color:var(--grey-900);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  max-width:180px;font-weight:600;
+}
+.activity-item .t{
+  color:var(--grey-500);flex-shrink:0;margin-left:8px;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media(max-width:900px){
+  .app{display:flex;flex-direction:column;height:auto;min-height:calc(100vh - 130px)}
+  .sidebar{order:1;width:100%;border-right:none;border-bottom:1px solid var(--grey-200)}
+  .sb-list{max-height:200px}
+  .center{order:2;width:100%}
+  .results{max-height:60vh}
+  .right{order:3;width:100%;border-left:none;border-top:1px solid var(--grey-200);display:none}
+  .right.open{display:flex}
+  .tabs{order:3;width:100%}
+}
+@media(max-width:600px){
+  .bloc-marque{flex-direction:column;align-items:flex-start;padding:10px 12px}
+  .bloc-marque-logo{border-right:none;border-bottom:1px solid var(--grey-200);padding:0 0 6px 0}
+  .brand{font-size:13px;width:100%;justify-content:center}
+  .topbar-right{width:100%;justify-content:center;gap:12px;padding:6px 0;
+    border-top:1px solid var(--grey-200)}
+  .search-bar{padding:12px}
+  .search-bar input[type=text]{font-size:13px}
+  .search-btn{padding:11px 14px;font-size:12px}
+  .result-card{padding:12px}
+  .rc-title{font-size:13px}
+  .rc-desc{font-size:11px}
+}
+</style>
+</head>
+<body>
+
+<!-- BANDEAU TRICOLORE -->
+<div class="marianne-band"></div>
+
+<!-- BLOC-MARQUE -->
+<div class="bloc-marque">
+  <div class="bloc-marque-logo">République<br>Française</div>
+  <div class="bloc-marque-devise">
+    <em>Liberté</em>
+    <em>Égalité</em>
+    <em>Fraternité</em>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">
+    <span class="dot" id="statusDot"></span>
+    META MONITOR
+    <span class="sub">/ data.gouv.fr</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="search">🔍 Recherche</button>
+    <button class="tab" data-tab="sources">📡 Sources</button>
+    <button class="tab" data-tab="ministry">🏛️ Ministères</button>
+  </div>
+
+  <div class="topbar-right">
+    <div class="topbar-stat"><span>API</span><span class="val green" id="tbStatus">—</span></div>
+    <div class="topbar-stat"><span>LATENCE</span><span class="val amber" id="tbLatency">—</span></div>
+    <div class="topbar-stat"><span>RÉSULTATS</span><span class="val" id="tbCount">—</span></div>
+    <div class="topbar-stat"><span>UPTIME</span><span class="val" id="tbUptime">—</span></div>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- SIDEBAR GAUCHE -->
+  <aside class="sidebar">
+    <div class="sb-head">
+      <div class="sb-title">Sources</div>
+      <div class="sb-count" id="sbCount">4 sources actives</div>
+    </div>
+    <div class="sb-search">
+      <input type="text" id="sourceSearch" placeholder="🔍 Filtrer...">
+    </div>
+    <div class="sb-list" id="sbList"></div>
+  </aside>
+
+  <!-- CENTRE -->
+  <main class="center">
+
+    <div class="search-bar">
+      <input type="text" id="queryInput" placeholder="🔍 Rechercher un jeu de données, une API…"
+             autocomplete="off">
+      <select id="typeSelect">
+        <option value="all">Tout</option>
+        <option value="dataset">📦 Datasets</option>
+        <option value="dataservice">🔌 APIs</option>
+      </select>
+      <select id="sortSelect">
+        <option value="relevance">Pertinence</option>
+        <option value="popularity">Popularité</option>
+        <option value="recent">Récence</option>
+      </select>
+      <button class="search-btn" id="searchBtn">▶ LANCER</button>
+    </div>
+
+    <div class="mode-tabs">
+      <button class="mode-tab active" data-view="results">📋 Résultats</button>
+      <button class="mode-tab" data-view="json">📄 JSON brut</button>
+      <button class="mode-tab" data-view="timing">⏱️ Timings</button>
+    </div>
+
+    <div class="results" id="resultsArea">
+      <div class="empty">
+        <div style="font-size:48px;margin-bottom:16px">🇫🇷</div>
+        <div style="font-weight:700;color:var(--grey-900);margin-bottom:8px;font-size:16px">
+          Méta-moteur data.gouv.fr
+        </div>
+        <div>Tape un mot-clé et lance la recherche.</div>
+        <div style="margin-top:16px;font-size:12px;color:var(--grey-500)">
+          Backend attendu : <code style="color:var(--blue-france);font-weight:600">http://localhost:8001</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="export-group">
+      <button class="export-btn" id="exportCsv" disabled>📥 Export CSV</button>
+      <button class="export-btn" id="exportJson" disabled>📥 Export JSON</button>
+      <button class="export-btn" id="clearBtn">🗑️ Effacer</button>
+    </div>
+  </main>
+
+  <!-- SIDEBAR DROITE -->
+  <aside class="right" id="rightPanel">
+    <div class="rs-head">Intelligence</div>
+    <div class="rs-body">
+
+      <div class="intel-panel">
+        <div class="intel-head"><span>💚 ÉTAT DU BACKEND</span></div>
+        <div class="intel-body">
+          <div class="intel-row"><span class="k">Endpoint</span><span class="v cyan" id="ivEndpoint">—</span></div>
+          <div class="intel-row"><span class="k">Statut</span><span class="v green" id="ivStatus">—</span></div>
+          <div class="intel-row"><span class="k">Latence</span><span class="v amber" id="ivLatency">—</span></div>
+          <div class="intel-row"><span class="k">Dernier ping</span><span class="v" id="ivLastPing">—</span></div>
+          <div class="intel-row"><span class="k">Uptime session</span><span class="v cyan" id="ivUptime">—</span></div>
+        </div>
+      </div>
+
+      <div class="intel-panel">
+        <div class="intel-head"><span>📊 DERNIÈRE RECHERCHE</span></div>
+        <div class="intel-body">
+          <div class="intel-row"><span class="k">Requête</span><span class="v cyan" id="ivQuery">—</span></div>
+          <div class="intel-row"><span class="k">Résultats</span><span class="v green" id="ivCount">—</span></div>
+          <div class="intel-row"><span class="k">Temps total</span><span class="v amber" id="ivTime">—</span></div>
+          <div class="intel-row"><span class="k">Datasets</span><span class="v" id="ivDatasets">—</span></div>
+          <div class="intel-row"><span class="k">APIs</span><span class="v" id="ivApis">—</span></div>
+        </div>
+      </div>
+
+      <div class="intel-panel">
+        <div class="intel-head"><span>📡 SANTÉ DES SOURCES</span></div>
+        <div class="intel-body" id="sourceHealth">
+          <div class="intel-row"><span class="k">Catalogue v1</span><span class="v green">● OK</span></div>
+          <div class="intel-row"><span class="k">Catalogue v2</span><span class="v green">● OK</span></div>
+          <div class="intel-row"><span class="k">Dataservices</span><span class="v green">● OK</span></div>
+          <div class="intel-row"><span class="k">Tabulaire</span><span class="v green">● OK</span></div>
+        </div>
+      </div>
+
+      <div class="intel-panel">
+        <div class="intel-head"><span>🕐 ACTIVITÉ RÉCENTE</span></div>
+        <div class="intel-body" id="activityList">
+          <div style="text-align:center;color:var(--grey-500);font-size:11px;padding:8px">
+            Aucune activité
+          </div>
+        </div>
+      </div>
+
+      <div class="intel-panel">
+        <div class="intel-head"><span>⚙️ CONFIGURATION</span></div>
+        <div class="intel-body">
+          <div class="intel-row"><span class="k">Backend</span><span class="v cyan" id="cfgBackend">—</span></div>
+          <div class="intel-row"><span class="k">User agent</span><span class="v">MetaMonitor/1.0</span></div>
+          <div class="intel-row"><span class="k">Mode</span><span class="v" id="cfgMode">—</span></div>
+          <div class="intel-row"><span class="k">Cache</span><span class="v green">localStorage</span></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<script>
+/* ============================================================
+   CONFIG
+   ============================================================ */
+const API_BASE = localStorage.getItem('meta_api_base') || 'http://localhost:8001';
+const PING_INTERVAL = 30000;
+
+/* ============================================================
+   ÉTAT
+   ============================================================ */
+const state = {
+  apiBase: API_BASE,
+  lastQuery: '',
+  lastResults: [],
+  lastResponseTime: 0,
+  uptimeStart: Date.now(),
+  activities: [],
+  sources: [
+    { id: 'v1', name: 'Catalogue v1', icon: '📚', color: '#000091', status: 'ok', count: 0 },
+    { id: 'v2', name: 'Catalogue v2', icon: '📦', color: '#1212ff', status: 'ok', count: 0 },
+    { id: 'ds', name: 'Dataservices', icon: '🔌', color: '#18753c', status: 'ok', count: 0 },
+    { id: 'tab', name: 'Tabulaire', icon: '📊', color: '#ffb800', status: 'ok', count: 0 },
+  ]
+};
+
+/* ============================================================
+   UTILITAIRES
+   ============================================================ */
+function escapeHtml(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+function formatUptime(ms){
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${sec}s`;
+  return `${sec}s`;
+}
+
+/* ============================================================
+   PING BACKEND
+   ============================================================ */
+async function pingBackend(){
+  const start = performance.now();
+  const dot = document.getElementById('statusDot');
+  try {
+    const r = await fetch(`${state.apiBase}/`, { method: 'GET', cache: 'no-store' });
+    const latency = Math.round(performance.now() - start);
+
+    if (r.ok){
+      dot.classList.remove('offline');
+      document.getElementById('tbStatus').textContent = 'ONLINE';
+      document.getElementById('tbStatus').className = 'val green';
+      document.getElementById('ivStatus').textContent = '● EN LIGNE';
+      document.getElementById('ivStatus').className = 'v green';
+      document.getElementById('ivLatency').textContent = latency + ' ms';
+      document.getElementById('ivLatency').className = 'v ' + (latency < 200 ? 'green' : latency < 500 ? 'amber' : 'red');
+      document.getElementById('tbLatency').textContent = latency + ' ms';
+      document.getElementById('tbLatency').className = 'val ' + (latency < 200 ? 'green' : latency < 500 ? 'amber' : 'red');
+      document.getElementById('ivLastPing').textContent = new Date().toLocaleTimeString('fr-FR');
+    } else {
+      throw new Error('HTTP ' + r.status);
+    }
+  } catch(err){
+    dot.classList.add('offline');
+    document.getElementById('tbStatus').textContent = 'OFFLINE';
+    document.getElementById('tbStatus').className = 'val red';
+    document.getElementById('ivStatus').textContent = '● HORS LIGNE';
+    document.getElementById('ivStatus').className = 'v red';
+    document.getElementById('ivLatency').textContent = '—';
+    document.getElementById('tbLatency').textContent = '—';
+  }
+}
+
+/* ============================================================
+   RECHERCHE
+   ============================================================ */
+async function runSearch(){
+  const q = document.getElementById('queryInput').value.trim();
+  const type = document.getElementById('typeSelect').value;
+  const sort = document.getElementById('sortSelect').value;
+
+  if (!q && type === 'all'){
+    showResults(`<div class="empty">Tape un mot-clé pour lancer une recherche.</div>`);
+    return;
+  }
+
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ RECHERCHE...';
+
+  showResults(`
+    <div class="loading">
+      <div class="spin"></div>
+      Recherche « ${escapeHtml(q || 'tous')} » en cours...
+    </div>
+  `);
+
+  const start = performance.now();
+  try {
+    const url = new URL(`${state.apiBase}/search`);
+    url.searchParams.set('q', q);
+    url.searchParams.set('type', type);
+    url.searchParams.set('sort', sort);
+    url.searchParams.set('page_size', 50);
+
+    const r = await fetch(url.toString());
+    const elapsed = Math.round(performance.now() - start);
+
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+
+    state.lastQuery = q;
+    state.lastResults = data.results || [];
+    state.lastResponseTime = elapsed;
+
+    const datasets = state.lastResults.filter(x => x.type === 'dataset').length;
+    const apis = state.lastResults.filter(x => x.type === 'dataservice').length;
+    document.getElementById('tbCount').textContent = data.count || 0;
+    document.getElementById('ivQuery').textContent = q || '(vide)';
+    document.getElementById('ivCount').textContent = data.count || 0;
+    document.getElementById('ivTime').textContent = elapsed + ' ms';
+    document.getElementById('ivDatasets').textContent = datasets;
+    document.getElementById('ivApis').textContent = apis;
+
+    document.getElementById('exportCsv').disabled = false;
+    document.getElementById('exportJson').disabled = false;
+
+    state.activities.unshift({
+      q: q || '(vide)',
+      count: data.count || 0,
+      time: new Date()
+    });
+    state.activities = state.activities.slice(0, 10);
+    renderActivities();
+
+    renderResults(data);
+
+  } catch(err){
+    showResults(`
+      <div class="error-box">
+        <strong>❌ Erreur :</strong> ${escapeHtml(err.message)}<br><br>
+        <span style="color:var(--grey-700)">Vérifie que le backend uvicorn tourne bien sur <code>${escapeHtml(state.apiBase)}</code>.</span>
+      </div>
+    `);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '▶ LANCER';
+  }
+}
+
+/* ============================================================
+   AFFICHAGE
+   ============================================================ */
+function showResults(html){
+  document.getElementById('resultsArea').innerHTML = html;
+}
+
+function renderResults(data){
+  const results = data.results || [];
+  if (!results.length){
+    showResults(`<div class="empty">Aucun résultat pour « ${escapeHtml(data.query)} ».</div>`);
+    return;
+  }
+
+  const html = results.map(item => {
+    const isApi = item.type === 'dataservice';
+    const badges = `
+      <span class="rc-badge ${isApi ? 'api' : 'dataset'}">${isApi ? 'API' : 'DATASET'}</span>
+      <span class="rc-badge src">${escapeHtml(item.source)}</span>
+      ${item.popularity ? `<span class="rc-badge pop">★ ${item.popularity.toLocaleString('fr-FR')}</span>` : ''}
+    `;
+    const tags = (item.tags || []).slice(0, 5)
+      .map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
+    const url = item.url || '#';
+
+    return `
+      <div class="result-card ${isApi ? 'api' : ''}">
+        <div class="rc-head">
+          <div class="rc-title">
+            <a href="${escapeHtml(url)}" target="_blank" rel="noopener">
+              ${escapeHtml(item.titre || item.id)}
+            </a>
+          </div>
+          <div class="rc-badges">${badges}</div>
+        </div>
+        ${item.organisation ? `<div class="rc-org">🏛️ ${escapeHtml(item.organisation)}</div>` : ''}
+        ${item.description ? `<div class="rc-desc">${escapeHtml(item.description)}</div>` : ''}
+        ${tags ? `<div class="rc-meta">${tags}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  const header = `
+    <div style="font-family:var(--font-sans);font-size:12px;color:var(--grey-700);
+                margin-bottom:12px;padding:10px 14px;background:var(--white);
+                border-radius:4px;border-left:4px solid var(--blue-france);
+                box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+      <strong style="color:var(--blue-france)">${data.count} résultat(s)</strong>
+      pour « ${escapeHtml(data.query || '(vide)')} »
+      · tri : ${escapeHtml(data.sort)}
+    </div>
+  `;
+
+  showResults(header + html);
+}
+
+/* ============================================================
+   SOURCES
+   ============================================================ */
+function renderSources(){
+  const list = document.getElementById('sbList');
+  const search = document.getElementById('sourceSearch').value.toLowerCase();
+
+  const filtered = state.sources.filter(s =>
+    s.name.toLowerCase().includes(search) || s.id.includes(search)
+  );
+
+  document.getElementById('sbCount').textContent =
+    `${state.sources.length} sources · ${state.sources.filter(s=>s.status==='ok').length} OK`;
+
+  if (!filtered.length){
+    list.innerHTML = '<div class="loading" style="padding:20px;font-size:11px">Aucune source</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(s => `
+    <div class="source-item ${s.status === 'err' ? 'err' : ''}">
+      <div class="source-item-h">
+        <span class="source-item-icon" style="color:${s.color}">${s.icon}</span>
+        <span class="source-item-name">${escapeHtml(s.name)}</span>
+      </div>
+      <div class="source-item-meta">
+        <span><span class="status-dot ${s.status === 'err' ? 'err' : s.status === 'warn' ? 'warn' : ''}"></span>${s.status === 'ok' ? 'OPÉRATIONNEL' : s.status === 'warn' ? 'DÉGRADÉ' : 'ERREUR'}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ============================================================
+   ACTIVITÉ
+   ============================================================ */
+function renderActivities(){
+  const el = document.getElementById('activityList');
+  if (!state.activities.length){
+    el.innerHTML = '<div style="text-align:center;color:var(--grey-500);font-size:11px;padding:8px">Aucune activité</div>';
+    return;
+  }
+  el.innerHTML = state.activities.map(a => `
+    <div class="activity-item">
+      <span class="q">"${escapeHtml(a.q)}" → ${a.count}</span>
+      <span class="t">${a.time.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'})}</span>
+    </div>
+  `).join('');
+}
+
+/* ============================================================
+   ONGLETS TOP
+   ============================================================ */
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    if (t.dataset.tab === 'search'){
+      document.getElementById('resultsArea').style.display = 'block';
+    } else if (t.dataset.tab === 'sources'){
+      renderSources();
+      document.getElementById('resultsArea').innerHTML = `
+        <div class="empty">
+          <div style="font-size:48px;margin-bottom:14px">📡</div>
+          <div style="font-weight:700;color:var(--grey-900);margin-bottom:10px;font-size:16px">
+            Sources disponibles
+          </div>
+          <div style="font-size:13px;line-height:2;margin-top:16px;text-align:left;
+                      max-width:520px;margin-left:auto;margin-right:auto">
+            <div>📚 <strong>Catalogue v1</strong> — /api/1/datasets/</div>
+            <div>📦 <strong>Catalogue v2</strong> — /api/2/datasets/search/</div>
+            <div>🔌 <strong>Dataservices</strong> — /api/2/dataservices/search/</div>
+            <div>📊 <strong>Tabulaire</strong> — tabular-api.data.gouv.fr</div>
+          </div>
+        </div>
+      `;
+    } else if (t.dataset.tab === 'ministry'){
+      const ministries = [
+        '🏛️ Intérieur', '🌿 Transition écologique', '⚔️ Armées',
+        '🎭 Culture', '⚖️ Justice', '💰 Économie & Finances',
+        '🏭 Industrie & Numérique', '🌾 Agriculture', '💊 Solidarités & Santé',
+        '🎓 Éducation nationale', '🔬 Enseignement supérieur', '⚽ Sports'
+      ];
+      document.getElementById('resultsArea').innerHTML = `
+        <div class="empty">
+          <div style="font-size:48px;margin-bottom:14px">🏛️</div>
+          <div style="font-weight:700;color:var(--grey-900);margin-bottom:10px;font-size:16px">
+            12 ministères intégrés
+          </div>
+          <div style="font-size:13px;line-height:2.2;margin-top:16px;text-align:left;
+                      max-width:520px;margin-left:auto;margin-right:auto">
+            ${ministries.map(m => `<div>${m}</div>`).join('')}
+          </div>
+        </div>
+      `;
+    }
+  });
+});
+
+/* ============================================================
+   ONGLETS DE VUE
+   ============================================================ */
+let currentView = 'results';
+document.querySelectorAll('.mode-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.mode-tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    currentView = t.dataset.view;
+    if (currentView === 'json'){
+      showResults(`<pre style="font-family:var(--font-mono);font-size:11px;
+        color:var(--grey-700);background:var(--white);padding:16px;border-radius:4px;
+        overflow-x:auto;border:1px solid var(--grey-200);max-height:70vh;
+        line-height:1.5">
+${escapeHtml(JSON.stringify(state.lastResults.slice(0, 5), null, 2))}
+      </pre>`);
+    } else if (currentView === 'timing'){
+      showResults(`
+        <div class="intel-panel" style="max-width:420px">
+          <div class="intel-head"><span>⏱️ TIMINGS DERNIÈRE RECHERCHE</span></div>
+          <div class="intel-body">
+            <div class="intel-row"><span class="k">Requête</span><span class="v cyan">${escapeHtml(state.lastQuery || '—')}</span></div>
+            <div class="intel-row"><span class="k">Temps total</span><span class="v green">${state.lastResponseTime} ms</span></div>
+            <div class="intel-row"><span class="k">Résultats</span><span class="v amber">${state.lastResults.length}</span></div>
+          </div>
+        </div>
+      `);
+    } else {
+      if (state.lastResults.length) renderResults({results: state.lastResults, query: state.lastQuery, count: state.lastResults.length, sort: 'relevance'});
+      else showResults(`<div class="empty">Lance une recherche pour voir les résultats.</div>`);
+    }
+  });
+});
+
+/* ============================================================
+   EXPORTS
+   ============================================================ */
+document.getElementById('exportCsv').addEventListener('click', () => {
+  if (!state.lastQuery) return;
+  const params = new URLSearchParams({ q: state.lastQuery, format: 'csv', max_pages: 3 });
+  window.location.href = `${state.apiBase}/export?${params.toString()}`;
+});
+
+document.getElementById('exportJson').addEventListener('click', () => {
+  if (!state.lastQuery) return;
+  const params = new URLSearchParams({ q: state.lastQuery, format: 'json', max_pages: 3 });
+  window.open(`${state.apiBase}/export?${params.toString()}`, '_blank');
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  state.lastResults = [];
+  state.lastQuery = '';
+  document.getElementById('tbCount').textContent = '—';
+  document.getElementById('ivQuery').textContent = '—';
+  document.getElementById('ivCount').textContent = '—';
+  document.getElementById('ivTime').textContent = '—';
+  document.getElementById('exportCsv').disabled = true;
+  document.getElementById('exportJson').disabled = true;
+  showResults(`
+    <div class="empty">
+      <div style="font-size:48px;margin-bottom:16px">🇫🇷</div>
+      <div style="font-weight:700;color:var(--grey-900);margin-bottom:8px;font-size:16px">
+        Méta-moteur data.gouv.fr
+      </div>
+      <div>Tape un mot-clé et lance la recherche.</div>
+    </div>
+  `);
+});
+
+/* ============================================================
+   EVENTS
+   ============================================================ */
+document.getElementById('searchBtn').addEventListener('click', runSearch);
+document.getElementById('queryInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') runSearch();
+});
+document.getElementById('sourceSearch').addEventListener('input', renderSources);
+
+/* ============================================================
+   UPTIME
+   ============================================================ */
+setInterval(() => {
+  const uptime = Date.now() - state.uptimeStart;
+  document.getElementById('ivUptime').textContent = formatUptime(uptime);
+  document.getElementById('tbUptime').textContent = formatUptime(uptime);
+}, 1000);
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function init(){
+  document.getElementById('cfgBackend').textContent = state.apiBase;
+  document.getElementById('ivEndpoint').textContent = state.apiBase.replace(/^https?:\/\//, '');
+  document.getElementById('cfgMode').textContent = 'monitor';
+  renderSources();
+  pingBackend();
+  setInterval(pingBackend, PING_INTERVAL);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
