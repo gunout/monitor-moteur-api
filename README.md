@@ -32,13 +32,15 @@ L'interface suit la **charte Marianne** (DSFR) avec bandeau tricolore et bloc-ma
 
 ### Dashboard principal
 
-<img src="https://github.com/user-attachments/assets/c5ea1588-2198-4b83-908b-24dd8fdaf4ca" alt="Dashboard du monitor" width="800">
+<img width="1644" height="829" alt="Screenshot 2026-09-28 at 15-46-32 🇫🇷 Meta Monitor — Méta-moteur data gouv fr" src="https://github.com/user-attachments/assets/97d94b3e-1aa3-4f99-a727-251945cde99a" />
+
 
 *Vue d'ensemble avec recherche intégrée, statistiques en direct et historique d'activité.*
 
 ### Panneau d'intelligence
 
-<img src="https://github.com/user-attachments/assets/115f0671-84f6-4357-90b7-3f62b4ca5bd1" alt="Panneau intelligence" width="800">
+<img width="1644" height="829" alt="Screenshot 2026-09-28 at 15-50-50 🇫🇷 Meta Monitor — Méta-moteur data gouv fr" src="https://github.com/user-attachments/assets/b7a6760c-4357-4712-9282-543ce380688a" />
+
 
 *État du backend, santé des sources et configuration en temps réel.*
 
